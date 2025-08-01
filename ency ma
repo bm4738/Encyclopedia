@@ -1,0 +1,40 @@
+async function searchUser() {
+  const username = document.getElementById("usernameInput").value;
+  const profile = document.getElementById("profile");
+  const repos = document.getElementById("repos");
+
+  profile.innerHTML = "";
+  repos.innerHTML = "";
+
+  if (!username) return;
+
+  try {
+    const userRes = await fetch(`https://api.github.com/users/${username}`);
+    if (!userRes.ok) throw new Error("User not found");
+    const userData = await userRes.json();
+
+    profile.innerHTML = `
+      <img src="${userData.avatar_url}" />
+      <h2>${userData.name || userData.login}</h2>
+      <p>${userData.bio || "No bio available."}</p>
+      <p>Followers: ${userData.followers} | Following: ${userData.following}</p>
+    `;
+
+    const repoRes = await fetch(userData.repos_url + "?per_page=100");
+    const repoData = await repoRes.json();
+    const topRepos = repoData.sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 5);
+
+    repos.innerHTML = "<h3>Top Repositories</h3>";
+    topRepos.forEach(repo => {
+      repos.innerHTML += `
+        <div class="repo">
+          <strong>${repo.name}</strong><br/>
+          ⭐ ${repo.stargazers_count} | 🍴 ${repo.forks_count}<br/>
+          <a href="${repo.html_url}" target="_blank">View Repo</a>
+        </div>
+      `;
+    });
+  } catch (error) {
+    profile.innerHTML = `<p style="color: red;">${error.message}</p>`;
+  }
+}
